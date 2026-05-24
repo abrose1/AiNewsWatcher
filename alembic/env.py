@@ -22,6 +22,9 @@ if config.config_file_name is not None:
 db_url = os.environ.get("AI_NEWS_DATABASE_URL")
 if not db_url:
     raise RuntimeError("AI_NEWS_DATABASE_URL must be set for alembic migrations")
+# Railway's Postgres URL omits the SQLAlchemy driver prefix; patch it in.
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata

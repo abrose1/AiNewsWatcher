@@ -13,11 +13,19 @@ _engine = None
 _SessionLocal: sessionmaker[Session] | None = None
 
 
+def _normalize_db_url(url: str) -> str:
+    """Railway's Postgres DATABASE_URL starts with 'postgresql://' (no driver
+    prefix). SQLAlchemy 2 needs an explicit driver, so we patch it in."""
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
 def get_engine():
     global _engine
     if _engine is None:
         cfg = load_config()
-        _engine = create_engine(cfg.secrets.database_url, future=True, pool_pre_ping=True)
+        _engine = create_engine(_normalize_db_url(cfg.secrets.database_url), future=True, pool_pre_ping=True)
     return _engine
 
 

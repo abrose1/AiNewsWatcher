@@ -1,22 +1,12 @@
-# Arizona is MST year-round (UTC-7, no DST).
-# Weekdays 6:45 PM MST = 01:45 UTC the next day (UTC days Tue-Sat).
-# Weekends 1:00 PM MST = 20:00 UTC same day (UTC days Sat & Sun).
+# Default Railway config (used by the inbound-webhook service).
+#
+# Cron services point at railway.weekday.toml and railway.weekend.toml via
+# the "Config Path" setting in their Service → Settings → Source pane.
 
-[[services]]
-name = "daily-fact-weekday"
-[services.cron]
-schedule = "45 1 * * 2-6"
-command = "python -m watcher.jobs.daily_fact"
+[build]
+builder = "NIXPACKS"
 
-[[services]]
-name = "daily-fact-weekend"
-[services.cron]
-schedule = "0 20 * * 0,6"
-command = "python -m watcher.jobs.daily_fact"
-
-# Always-on webhook for inbound SMS follow-ups. Twilio "A message comes in"
-# URL should point at https://<this-service>.up.railway.app/sms/inbound
-[[services]]
-name = "inbound-webhook"
-[services.deploy]
+[deploy]
 startCommand = "uvicorn watcher.web:app --host 0.0.0.0 --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

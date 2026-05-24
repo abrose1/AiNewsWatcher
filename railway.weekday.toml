@@ -1,0 +1,13 @@
+# Cron config for the weekday daily-fact service.
+# Mon-Fri 6:45 PM Arizona (MST, UTC-7) = Tue-Sat 01:45 UTC.
+#
+# Set the service's "Config Path" to railway.weekday.toml in
+# Service → Settings → Source.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python -m watcher.jobs.daily_fact"
+restartPolicyType = "NEVER"
+cronSchedule = "45 1 * * 2-6"
