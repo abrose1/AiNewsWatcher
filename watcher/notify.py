@@ -22,34 +22,42 @@ def is_gsm7(text: str) -> bool:
     return all(c in _GSM7_CHARS for c in text)
 
 
-def truncate_for_sms(body: str, *, hard_cap: int = _HARD_CAP) -> str:
-    """Truncate body to the hard cap, preferring whole-word boundaries.
-
-    Does not attempt to preserve trailing URLs — formatter should handle that
-    by composing body+URL within the cap upstream.
-    """
-    if len(body) <= hard_cap:
-        return body
-    cut = body[: hard_cap - 1]
+def truncate_text(text: str, max_chars: int) -> str:
+    """Truncate to max_chars at a word boundary when possible, appending an ellipsis."""
+    if len(text) <= max_chars:
+        return text
+    cut = text[: max_chars - 1]
     last_space = cut.rfind(" ")
-    if last_space > hard_cap * 0.6:
+    if last_space > max_chars * 0.6:
         cut = cut[:last_space]
     return cut.rstrip() + "…"
+
+
+def compose_sms(body: str, link: str | None, *, hard_cap: int = _HARD_CAP) -> str:
+    """Combine body + optional link, preserving the full link by truncating body if needed."""
+    if not link:
+        return truncate_text(body, hard_cap)
+    suffix = f" {link}"
+    budget = hard_cap - len(suffix)
+    if budget < 20:  # link alone is huge; just send what fits and skip the link
+        return truncate_text(body, hard_cap)
+    return truncate_text(body, budget) + suffix
 
 
 def send_sms(
     body: str,
     *,
+    link: str | None = None,
     to: str,
     from_: str,
     account_sid: str,
     auth_token: str,
 ) -> str:
     """Send via Twilio. Returns the message SID."""
-    body = truncate_for_sms(body)
-    encoding = "GSM-7" if is_gsm7(body) else "UCS-2"
-    log.info("Sending SMS (%s, %s chars): %s", encoding, len(body), body[:80])
+    final = compose_sms(body, link)
+    encoding = "GSM-7" if is_gsm7(final) else "UCS-2"
+    log.info("Sending SMS (%s, %s chars): %s", encoding, len(final), final[:80])
     client = Client(account_sid, auth_token)
-    msg = client.messages.create(body=body, from_=from_, to=to)
+    msg = client.messages.create(body=final, from_=from_, to=to)
     log.info("Twilio SID: %s", msg.sid)
     return msg.sid

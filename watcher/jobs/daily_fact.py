@@ -19,7 +19,7 @@ from watcher.judge import (
     pick_seed,
 )
 from watcher.models import SeedItem, SendLog, SentFact
-from watcher.notify import send_sms
+from watcher.notify import compose_sms, send_sms
 from watcher.sources.brave import SearchResult, normalize_url, search, search_many
 
 log = logging.getLogger(__name__)
@@ -160,7 +160,8 @@ def run(dry_run: bool = False, force_news: bool = False) -> int:
             dedupe_key = None
             seed_id = chosen.id
 
-        log.info("Composed SMS (%s chars):\n%s", len(body), body)
+        final_sms = compose_sms(body, link)
+        log.info("Composed SMS (%s chars):\n%s", len(final_sms), final_sms)
 
         if dry_run:
             log.info("--dry-run: skipping Twilio send and DB writes")
@@ -168,6 +169,7 @@ def run(dry_run: bool = False, force_news: bool = False) -> int:
 
         sid = send_sms(
             body,
+            link=link,
             to=cfg.sms.to_number,
             from_=cfg.sms.from_number,
             account_sid=cfg.secrets.twilio_account_sid,
@@ -179,7 +181,7 @@ def run(dry_run: bool = False, force_news: bool = False) -> int:
                 fact_kind=fact_kind,
                 seed_item_id=seed_id,
                 news_dedupe_key=dedupe_key,
-                sms_body=body,
+                sms_body=final_sms,
                 link=link,
             )
         )

@@ -7,15 +7,15 @@ from pathlib import Path
 import yaml
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 @dataclass(frozen=True)
 class SmsConfig:
-    to_number: str
-    from_number: str
+    to_number: str  # may be "" if not configured; checked at send time
+    from_number: str  # may be ""
     first_name: str
 
 
@@ -45,8 +45,8 @@ class Secrets:
     database_url: str
     brave_api_key: str
     anthropic_api_key: str
-    twilio_account_sid: str
-    twilio_auth_token: str
+    twilio_account_sid: str  # may be "" if not configured; checked at send time
+    twilio_auth_token: str  # may be ""
 
 
 @dataclass(frozen=True)
@@ -90,8 +90,8 @@ def load_config(yaml_path: Path | None = None) -> Config:
 
     sms_raw = raw.get("sms", {})
     sms = SmsConfig(
-        to_number=_env("SMS_TO_NUMBER", sms_raw.get("to_number", ""), required=True),
-        from_number=_env("TWILIO_FROM_NUMBER", sms_raw.get("from_number", ""), required=True),
+        to_number=_env("SMS_TO_NUMBER", sms_raw.get("to_number", "")),
+        from_number=_env("TWILIO_FROM_NUMBER", sms_raw.get("from_number", "")),
         first_name=sms_raw.get("first_name", "there"),
     )
 
@@ -122,8 +122,8 @@ def load_config(yaml_path: Path | None = None) -> Config:
         database_url=_env("AI_NEWS_DATABASE_URL", required=True),
         brave_api_key=_env("BRAVE_API_KEY", required=True),
         anthropic_api_key=_env("ANTHROPIC_API_KEY", required=True),
-        twilio_account_sid=_env("TWILIO_ACCOUNT_SID", required=True),
-        twilio_auth_token=_env("TWILIO_AUTH_TOKEN", required=True),
+        twilio_account_sid=_env("TWILIO_ACCOUNT_SID"),
+        twilio_auth_token=_env("TWILIO_AUTH_TOKEN"),
     )
 
     return Config(sms=sms, news=news, llm=llm, seed_items=seed_items, secrets=secrets)

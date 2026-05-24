@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
-from watcher.config import load_config
 from watcher.models import Base
+
+load_dotenv(override=True)
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Inject database URL from our config/env at runtime so alembic.ini stays empty.
-config.set_main_option("sqlalchemy.url", load_config().secrets.database_url)
+# Read DB URL directly from env so alembic doesn't need any other config/secrets.
+db_url = os.environ.get("AI_NEWS_DATABASE_URL")
+if not db_url:
+    raise RuntimeError("AI_NEWS_DATABASE_URL must be set for alembic migrations")
+config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
 

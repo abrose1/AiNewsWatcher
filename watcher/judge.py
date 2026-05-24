@@ -45,7 +45,7 @@ Examples of the voice we want:
 - "Mixture of Experts (MoE): an architecture where each token routes to a few specialist sub-networks instead of activating the whole model. It's why DeepSeek and Mixtral train and serve cheaply at large parameter counts."
 
 Voice rules:
-- 2-3 short sentences, hard cap ~280 chars.
+- 2-3 short sentences. Keep the BODY under 180 characters (the system appends the link separately, so do NOT include any URLs in the body field).
 - Lead with the subject. No greeting.
 - One identity sentence + one current/non-obvious detail.
 - Plain text. No emoji.
@@ -215,7 +215,7 @@ def format_news_fact(
     title = chosen.title if chosen else ""
     desc = chosen.description if chosen else ""
 
-    prompt = f"""Write today's breaking-news SMS for Andrew. Prefix with "Breaking News:" exactly.
+    prompt = f"""Write today's breaking-news SMS for Andrew. Prefix the body with "Breaking News:" exactly.
 
 Chosen story:
 - title: {title}
@@ -225,8 +225,8 @@ Chosen story:
 
 {_FORMAT_EXAMPLES}
 
-Additional rule: this is a news takeover, so always include the URL at the end of the body.
-Output JSON: {{"body": "<the SMS text including 'Breaking News:' prefix and the URL>"}}.
+The system will append the URL to your body automatically — do NOT include the URL in the body.
+Output JSON: {{"body": "<the SMS text including 'Breaking News:' prefix, NO url>"}}.
 Reply with JSON only.
 """
 
@@ -239,7 +239,7 @@ Reply with JSON only.
     data = _extract_json(text) or {}
     body = (data.get("body") or "").strip()
     if not body:
-        body = f"Breaking News: {pick.one_line_summary} {pick.chosen_url}"
+        body = f"Breaking News: {pick.one_line_summary}"
     return body, pick.chosen_url
 
 
