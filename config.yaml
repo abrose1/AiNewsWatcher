@@ -22,17 +22,30 @@ news:
 llm:
   model: "claude-sonnet-4-6"
   takeover_threshold_notes: |
-    Mark takeover-worthy only for events that a well-informed industry observer
-    would call genuinely notable, including but not limited to:
-      - Frontier model launches from any serious lab (US, EU, Chinese, or other)
-      - SOTA benchmark beats or new evaluation results that shift perception
-      - Major funding rounds (>$300M) or acquisitions
+    DEFAULT TO REJECTING. Most days, nothing in the news should clear this bar
+    — on a typical day you should return takeover=false. Think of this as
+    promoting maybe one story per week, not per day. If you find yourself
+    rationalizing why something is "kind of" worth a takeover, the answer
+    is no.
+
+    The bar: only flag a story if Andrew would feel actively misinformed
+    not knowing about it by tomorrow. It should be the kind of thing that
+    will still be talked about in industry conversations a week from now.
+
+    Genuinely-worth-it categories (still apply the bar above — being in a
+    category is necessary, not sufficient):
+      - Frontier-tier model launches that meaningfully shift capability or
+        cost frontiers (a flagship model from a top lab; not incremental
+        Flash/Mini/Haiku tiers unless they post surprising benchmarks)
+      - SOTA benchmark results that change the leaderboard picture
+      - Funding rounds >$500M or acquisitions that reshape the landscape
       - Leadership changes at top labs (CEO, chief scientist, head of safety)
-      - Significant regulatory milestones (laws passed, major executive actions)
-      - Clearly viral product launches or unexpected open-source releases
-      - AI safety incidents (jailbreaks, capability surprises, governance disputes)
-    Reject: incremental blog updates, speculative thinkpieces, listicles, rumors
-    without sourcing, and routine product polish.
+      - Significant regulatory milestones with real enforcement
+      - Major unexpected open-source releases (the kind that surprise people)
+      - AI safety/governance incidents with real stakes (not speculation)
+
+    When in doubt, return takeover=false. The seed-fact branch is a perfectly
+    good fallback and runs by default.
 
 seed_items:
   # === The big-3 US lab CEOs ===

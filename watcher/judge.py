@@ -85,19 +85,21 @@ def is_takeover_worthy(
     listed = "\n".join(
         f"- url: {c.url}\n  title: {c.title}\n  desc: {c.description}" for c in candidates
     )
-    prompt = f"""You are deciding whether any of today's AI news items is big enough to be the single thing Andrew should hear about today, in lieu of a curated daily fact.
+    prompt = f"""You are a strict gatekeeper deciding whether any AI news today is big enough to override Andrew's normal curated daily fact.
+
+Your default answer is takeover=false. Most days, nothing in the news rises to this bar. Approve a takeover only when the story is unambiguously important; if you have to argue yourself into it, reject.
 
 Threshold guidance:
 {threshold_notes}
 
-Candidates (last 24h):
+Candidates from the last 24h:
 {listed}
 
 Return JSON:
-- If nothing meets the bar: {{"takeover": false}}
-- If one item meets the bar: {{"takeover": true, "chosen_url": "...", "one_line_summary": "<one short sentence>"}}
+- Default (and most common): {{"takeover": false}}
+- Only when clearly warranted: {{"takeover": true, "chosen_url": "...", "one_line_summary": "<one short sentence>"}}
 
-Be strict. Most days nothing should meet the bar. Reply with JSON only, no prose.
+Reply with JSON only, no prose.
 """
 
     resp = _client(api_key).messages.create(
