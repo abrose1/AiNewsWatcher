@@ -13,10 +13,12 @@ _GSM7_CHARS = set(
     "^{}\\[~]|€"
 )
 
-# Safety-net hard cap. Daily facts target ~250 chars; replies may run up to
-# ~320. Both fit within 3 GSM-7 segments (459 chars) or roughly 4 UCS-2
-# segments (280 chars). Twilio concatenates segments transparently.
-_HARD_CAP = 320
+# Hard cap = Twilio's API maximum (1600 chars). At this size Twilio splits
+# into ~11 concatenated SMS segments, which Google Messages on Android
+# reassembles into a single bubble. The prompts in judge.py target much
+# shorter lengths (~260 for daily facts, ~320 for replies) for readability;
+# this cap is only a safety net against runaway LLM output.
+_HARD_CAP = 1600
 
 
 def is_gsm7(text: str) -> bool:
