@@ -13,9 +13,10 @@ _GSM7_CHARS = set(
     "^{}\\[~]|€"
 )
 
-# Hard cap for the SMS body — comfortably within 2 segments of UCS-2 (140 chars)
-# or 3 segments of GSM-7 (459 chars). We aim short.
-_HARD_CAP = 280
+# Safety-net hard cap. Daily facts target ~250 chars; replies may run up to
+# ~320. Both fit within 3 GSM-7 segments (459 chars) or roughly 4 UCS-2
+# segments (280 chars). Twilio concatenates segments transparently.
+_HARD_CAP = 320
 
 
 def is_gsm7(text: str) -> bool:

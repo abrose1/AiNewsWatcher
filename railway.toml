@@ -13,3 +13,10 @@ name = "daily-fact-weekend"
 [services.cron]
 schedule = "0 20 * * 0,6"
 command = "python -m watcher.jobs.daily_fact"
+
+# Always-on webhook for inbound SMS follow-ups. Twilio "A message comes in"
+# URL should point at https://<this-service>.up.railway.app/sms/inbound
+[[services]]
+name = "inbound-webhook"
+[services.deploy]
+startCommand = "uvicorn watcher.web:app --host 0.0.0.0 --port $PORT"

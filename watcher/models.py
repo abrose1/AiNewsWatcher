@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import ForeignKey, Index, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -48,6 +48,18 @@ class SentFact(Base):
     sent_at: Mapped[datetime] = mapped_column(default=_utcnow, nullable=False)
 
     seed_item: Mapped[SeedItem | None] = relationship(back_populates="sent_facts")
+
+
+class SmsThread(Base):
+    __tablename__ = "sms_threads"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    root_sent_fact_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sent_facts.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    transcript: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    started_at: Mapped[datetime] = mapped_column(default=_utcnow, nullable=False)
+    last_message_at: Mapped[datetime] = mapped_column(default=_utcnow, nullable=False)
 
 
 class SendLog(Base):

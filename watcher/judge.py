@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from anthropic import Anthropic
 
+from watcher.sources import brave
 from watcher.sources.brave import SearchResult
 
 log = logging.getLogger(__name__)
@@ -243,6 +244,91 @@ Reply with JSON only.
     if not body:
         body = f"Breaking News: {pick.one_line_summary}"
     return body
+
+
+_REPLY_TOOLS = [
+    {
+        "name": "brave_search",
+        "description": (
+            "Search the web for current information. Use sparingly — at most 2 searches per reply. "
+            "Only call this when the question requires fresh info you don't already know; otherwise answer directly."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "Concise web search query"}},
+            "required": ["query"],
+        },
+    }
+]
+
+_REPLY_SYSTEM_TEMPLATE = """\
+You are Andrew's AI-industry follow-up assistant over SMS.
+
+Earlier, you sent him this fact:
+"{fact_body}"
+
+He is now replying. Treat his messages as follow-ups about that fact, or related AI-industry questions. Be helpful and direct.
+
+SMS constraints:
+- Each reply MUST be under 320 characters. Aim for 200-280.
+- 2-4 short sentences. Plain text, no emoji, no URLs (URLs will be sent separately if needed).
+- If you need fresh info, use brave_search (max 2 calls per reply). Otherwise answer from your knowledge.
+- If the question is unclear or off-topic, ask one short clarifying question instead of guessing.
+"""
+
+
+def generate_reply(
+    fact_body: str,
+    transcript: list[dict],
+    *,
+    api_key: str,
+    brave_api_key: str,
+    model: str,
+    max_search_calls: int = 2,
+    max_iterations: int = 5,
+) -> str:
+    """Generate a reply to a user follow-up, with optional Brave search tool use."""
+    client = _client(api_key)
+    system = _REPLY_SYSTEM_TEMPLATE.format(fact_body=fact_body)
+    messages = list(transcript)
+    search_count = 0
+
+    for _ in range(max_iterations):
+        resp = client.messages.create(
+            model=model,
+            max_tokens=1000,
+            system=system,
+            tools=_REPLY_TOOLS,
+            messages=messages,
+        )
+
+        if resp.stop_reason != "tool_use":
+            text_parts = [b.text for b in resp.content if getattr(b, "type", None) == "text"]
+            return "".join(text_parts).strip() or "(no reply produced)"
+
+        messages.append({"role": "assistant", "content": [b.model_dump() for b in resp.content]})
+
+        tool_results = []
+        for block in resp.content:
+            if getattr(block, "type", None) != "tool_use":
+                continue
+            if block.name == "brave_search" and search_count < max_search_calls:
+                query = block.input.get("query", "")
+                log.info("Reply tool: brave_search(%r)", query)
+                results = brave.search(query, api_key=brave_api_key, count=5, freshness="pw")
+                content = "\n".join(
+                    f"- {r.title}: {r.description} ({r.url})" for r in results[:5]
+                ) or "(no results)"
+                search_count += 1
+            else:
+                content = "Search quota reached — answer with what you already have."
+            tool_results.append(
+                {"type": "tool_result", "tool_use_id": block.id, "content": content}
+            )
+
+        messages.append({"role": "user", "content": tool_results})
+
+    return "Sorry — I ran out of reasoning steps. Try rephrasing?"
 
 
 def generate_seeds(
