@@ -45,10 +45,10 @@ Examples of the voice we want:
 - "Mixture of Experts (MoE): an architecture where each token routes to a few specialist sub-networks instead of activating the whole model. It's why DeepSeek and Mixtral train and serve cheaply at large parameter counts."
 
 Voice rules:
-- 2-3 short sentences. Keep the BODY under 180 characters (the system appends the link separately, so do NOT include any URLs in the body field).
+- 2-3 short sentences. Keep the body under 260 characters (hard limit — do not exceed).
 - Lead with the subject. No greeting.
 - One identity sentence + one current/non-obvious detail.
-- Plain text. No emoji.
+- Plain text. No emoji. No URLs in the body (sources are handled by a separate "Source: ..." SMS).
 """
 
 
@@ -168,8 +168,8 @@ def format_seed_fact(
     *,
     api_key: str,
     model: str,
-) -> tuple[str, str | None]:
-    """Compose the SMS body for a seed pick. Returns (body, optional_link)."""
+) -> str:
+    """Compose the SMS body for a seed pick. Text-only — no source link."""
     context_block = "\n".join(
         f"- {r.title} ({r.url}): {r.description}" for r in context_results[:5]
     ) or "(no fresh search results found)"
@@ -180,12 +180,12 @@ Subject: {item.display_name}
 Category: {item.category}
 Notes about why this matters: {item.seed_notes}
 
-Recent web context (may help with current/non-obvious detail):
+Recent web context (may help with current/non-obvious detail; do NOT include URLs in the output):
 {context_block}
 
 {_FORMAT_EXAMPLES}
 
-Output JSON: {{"body": "<the SMS text>", "link": "<url or null if no strong link>"}}.
+Output JSON: {{"body": "<the SMS text>"}}.
 Reply with JSON only.
 """
 
@@ -197,10 +197,9 @@ Reply with JSON only.
     text = resp.content[0].text if resp.content else ""
     data = _extract_json(text) or {}
     body = (data.get("body") or "").strip()
-    link = data.get("link") or None
     if not body:
         body = f"{item.display_name}: {item.seed_notes}"
-    return body, link
+    return body
 
 
 def format_news_fact(
@@ -209,8 +208,9 @@ def format_news_fact(
     *,
     api_key: str,
     model: str,
-) -> tuple[str, str]:
-    """Compose the SMS body for a breaking-news takeover. Returns (body, link)."""
+) -> str:
+    """Compose the SMS body for a breaking-news takeover. Source URL is sent
+    as a separate follow-up SMS by the caller."""
     chosen = next((c for c in candidates if c.url == pick.chosen_url), None)
     title = chosen.title if chosen else ""
     desc = chosen.description if chosen else ""
@@ -225,8 +225,8 @@ Chosen story:
 
 {_FORMAT_EXAMPLES}
 
-The system will append the URL to your body automatically — do NOT include the URL in the body.
-Output JSON: {{"body": "<the SMS text including 'Breaking News:' prefix, NO url>"}}.
+The URL will be sent to Andrew as a separate "Source: ..." follow-up SMS, so do NOT include the URL in this body.
+Output JSON: {{"body": "<the SMS text including 'Breaking News:' prefix>"}}.
 Reply with JSON only.
 """
 
@@ -240,7 +240,7 @@ Reply with JSON only.
     body = (data.get("body") or "").strip()
     if not body:
         body = f"Breaking News: {pick.one_line_summary}"
-    return body, pick.chosen_url
+    return body
 
 
 def generate_seeds(

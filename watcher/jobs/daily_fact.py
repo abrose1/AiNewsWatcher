@@ -19,7 +19,7 @@ from watcher.judge import (
     pick_seed,
 )
 from watcher.models import SeedItem, SendLog, SentFact
-from watcher.notify import compose_sms, send_sms
+from watcher.notify import send_sms
 from watcher.sources.brave import SearchResult, normalize_url, search, search_many
 
 log = logging.getLogger(__name__)
@@ -116,14 +116,15 @@ def run(dry_run: bool = False, force_news: bool = False) -> int:
 
         if news_pick:
             log.info("Breaking news takeover: %s", news_pick.chosen_url)
-            body, link = format_news_fact(
+            body = format_news_fact(
                 news_pick,
                 news_candidates,
                 api_key=cfg.secrets.anthropic_api_key,
                 model=cfg.llm.model,
             )
+            link = news_pick.chosen_url
             fact_kind = "news"
-            dedupe_key = normalize_url(news_pick.chosen_url)
+            dedupe_key = normalize_url(link)
             seed_id = None
         else:
             slate = _pull_slate(session)
@@ -150,18 +151,20 @@ def run(dry_run: bool = False, force_news: bool = False) -> int:
                 log.info("Seed pick: %s (%s)", chosen.display_name, pick.rationale)
 
             context_results = _augment_seed(chosen, cfg)
-            body, link = format_seed_fact(
+            body = format_seed_fact(
                 chosen,
                 context_results,
                 api_key=cfg.secrets.anthropic_api_key,
                 model=cfg.llm.model,
             )
+            link = None
             fact_kind = "seed"
             dedupe_key = None
             seed_id = chosen.id
 
-        final_sms = compose_sms(body, link)
-        log.info("Composed SMS (%s chars):\n%s", len(final_sms), final_sms)
+        log.info("Composed SMS (%s chars):\n%s", len(body), body)
+        if link:
+            log.info("Follow-up source SMS: Source: %s", link)
 
         if dry_run:
             log.info("--dry-run: skipping Twilio send and DB writes")
@@ -169,23 +172,33 @@ def run(dry_run: bool = False, force_news: bool = False) -> int:
 
         sid = send_sms(
             body,
-            link=link,
             to=cfg.sms.to_number,
             from_=cfg.sms.from_number,
             account_sid=cfg.secrets.twilio_account_sid,
             auth_token=cfg.secrets.twilio_auth_token,
         )
 
+        source_sid: str | None = None
+        if link:
+            source_sid = send_sms(
+                f"Source: {link}",
+                to=cfg.sms.to_number,
+                from_=cfg.sms.from_number,
+                account_sid=cfg.secrets.twilio_account_sid,
+                auth_token=cfg.secrets.twilio_auth_token,
+            )
+
         session.add(
             SentFact(
                 fact_kind=fact_kind,
                 seed_item_id=seed_id,
                 news_dedupe_key=dedupe_key,
-                sms_body=final_sms,
+                sms_body=body,
                 link=link,
             )
         )
-        session.add(SendLog(status="sent", fact_kind=fact_kind, twilio_sid=sid))
+        detail = f"source_sid={source_sid}" if source_sid else None
+        session.add(SendLog(status="sent", fact_kind=fact_kind, twilio_sid=sid, detail=detail))
 
     return 0
 

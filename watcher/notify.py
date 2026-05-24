@@ -22,8 +22,9 @@ def is_gsm7(text: str) -> bool:
     return all(c in _GSM7_CHARS for c in text)
 
 
-def truncate_text(text: str, max_chars: int) -> str:
-    """Truncate to max_chars at a word boundary when possible, appending an ellipsis."""
+def truncate_text(text: str, max_chars: int = _HARD_CAP) -> str:
+    """Safety-net truncation at a word boundary. Body should fit naturally;
+    if this kicks in, the prompt budget needs tightening."""
     if len(text) <= max_chars:
         return text
     cut = text[: max_chars - 1]
@@ -33,31 +34,19 @@ def truncate_text(text: str, max_chars: int) -> str:
     return cut.rstrip() + "…"
 
 
-def compose_sms(body: str, link: str | None, *, hard_cap: int = _HARD_CAP) -> str:
-    """Combine body + optional link, preserving the full link by truncating body if needed."""
-    if not link:
-        return truncate_text(body, hard_cap)
-    suffix = f" {link}"
-    budget = hard_cap - len(suffix)
-    if budget < 20:  # link alone is huge; just send what fits and skip the link
-        return truncate_text(body, hard_cap)
-    return truncate_text(body, budget) + suffix
-
-
 def send_sms(
     body: str,
     *,
-    link: str | None = None,
     to: str,
     from_: str,
     account_sid: str,
     auth_token: str,
 ) -> str:
-    """Send via Twilio. Returns the message SID."""
-    final = compose_sms(body, link)
-    encoding = "GSM-7" if is_gsm7(final) else "UCS-2"
-    log.info("Sending SMS (%s, %s chars): %s", encoding, len(final), final[:80])
+    """Send a single SMS via Twilio. Returns the message SID."""
+    body = truncate_text(body)
+    encoding = "GSM-7" if is_gsm7(body) else "UCS-2"
+    log.info("Sending SMS (%s, %s chars): %s", encoding, len(body), body[:80])
     client = Client(account_sid, auth_token)
-    msg = client.messages.create(body=final, from_=from_, to=to)
+    msg = client.messages.create(body=body, from_=from_, to=to)
     log.info("Twilio SID: %s", msg.sid)
     return msg.sid
