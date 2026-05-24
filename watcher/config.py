@@ -5,9 +5,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 
-load_dotenv(override=True)
+# Smart env loading:
+# - An explicit, non-empty shell env var always wins (e.g. a one-off
+#   `AI_NEWS_DATABASE_URL=... python -m ...` invocation pointed at Railway).
+# - When the shell var is missing or empty, the value from .env is used
+#   (covers the original case where the user's shell exports an empty
+#   ANTHROPIC_API_KEY that would otherwise mask the real .env value).
+load_dotenv(override=False)
+_DOTENV_FALLBACK = dotenv_values()
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -76,7 +83,7 @@ def _deep_merge(base: dict, overlay: dict) -> dict:
 
 
 def _env(name: str, default: str | None = None, required: bool = False) -> str:
-    val = os.environ.get(name, default)
+    val = os.environ.get(name) or _DOTENV_FALLBACK.get(name) or default
     if required and not val:
         raise RuntimeError(f"Missing required env var: {name}")
     return val or ""

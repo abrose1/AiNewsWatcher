@@ -9,7 +9,9 @@ from sqlalchemy import engine_from_config, pool
 
 from watcher.models import Base
 
-load_dotenv(override=True)
+# override=False so an explicit env var (e.g. AI_NEWS_DATABASE_URL=... alembic upgrade)
+# wins over .env. Lets us point at non-default databases (Railway, staging) ad-hoc.
+load_dotenv(override=False)
 
 config = context.config
 
