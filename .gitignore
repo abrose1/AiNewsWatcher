@@ -1,0 +1,12 @@
+.env
+.claude/
+config.override.yaml
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.idea/
+.vscode/
+*.egg-info/

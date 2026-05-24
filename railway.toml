@@ -1,0 +1,15 @@
+# Arizona is MST year-round (UTC-7, no DST).
+# Weekdays 6:45 PM MST = 01:45 UTC the next day (UTC days Tue-Sat).
+# Weekends 1:00 PM MST = 20:00 UTC same day (UTC days Sat & Sun).
+
+[[services]]
+name = "daily-fact-weekday"
+[services.cron]
+schedule = "45 1 * * 2-6"
+command = "python -m watcher.jobs.daily_fact"
+
+[[services]]
+name = "daily-fact-weekend"
+[services.cron]
+schedule = "0 20 * * 0,6"
+command = "python -m watcher.jobs.daily_fact"

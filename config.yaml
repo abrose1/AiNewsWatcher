@@ -1,0 +1,100 @@
+sms:
+  first_name: "Andrew"
+  # to_number and from_number come from env vars (SMS_TO_NUMBER, TWILIO_FROM_NUMBER)
+
+news:
+  # Strategy: ask broad "what's the biggest story" questions rather than
+  # enumerating every lab. The judge does the filtering.
+  standing_queries:
+    - "biggest AI news today"
+    - "top artificial intelligence story today"
+    - "major AI announcement this week"
+    - "AI breakthrough this week"
+    - "new frontier AI model released"
+    - "notable AI research paper this week"
+    - "AI industry funding or acquisition this week"
+    - "AI safety or alignment news this week"
+    - "AI regulation or policy news this week"
+    - "open source AI model release this week"
+  lookback_hours: 24
+  max_candidates: 15
+
+llm:
+  model: "claude-sonnet-4-6"
+  takeover_threshold_notes: |
+    Mark takeover-worthy only for events that a well-informed industry observer
+    would call genuinely notable, including but not limited to:
+      - Frontier model launches from any serious lab (US, EU, Chinese, or other)
+      - SOTA benchmark beats or new evaluation results that shift perception
+      - Major funding rounds (>$300M) or acquisitions
+      - Leadership changes at top labs (CEO, chief scientist, head of safety)
+      - Significant regulatory milestones (laws passed, major executive actions)
+      - Clearly viral product launches or unexpected open-source releases
+      - AI safety incidents (jailbreaks, capability surprises, governance disputes)
+    Reject: incremental blog updates, speculative thinkpieces, listicles, rumors
+    without sourcing, and routine product polish.
+
+seed_items:
+  # === The big-3 US lab CEOs ===
+  - { category: person,  key: dario-amodei,    display_name: "Dario Amodei",    seed_notes: "Anthropic CEO, ex-OpenAI VP research" }
+  - { category: person,  key: sam-altman,      display_name: "Sam Altman",      seed_notes: "OpenAI CEO" }
+  - { category: person,  key: demis-hassabis,  display_name: "Demis Hassabis",  seed_notes: "Google DeepMind CEO, 2024 Nobel laureate (chemistry, AlphaFold)" }
+
+  # === Less-obvious people who actually drive the field ===
+  - { category: person,  key: jakub-pachocki,      display_name: "Jakub Pachocki",      seed_notes: "OpenAI Chief Scientist (succeeded Ilya Sutskever)" }
+  - { category: person,  key: jared-kaplan,        display_name: "Jared Kaplan",        seed_notes: "Anthropic co-founder, scaling laws paper author" }
+  - { category: person,  key: mira-murati,         display_name: "Mira Murati",         seed_notes: "Ex-OpenAI CTO, founded Thinking Machines Lab 2024" }
+  - { category: person,  key: ilya-sutskever,      display_name: "Ilya Sutskever",      seed_notes: "Co-founded SSI (Safe Superintelligence) after OpenAI departure" }
+  - { category: person,  key: andrej-karpathy,     display_name: "Andrej Karpathy",     seed_notes: "Ex-Tesla/OpenAI, runs Eureka Labs (AI education)" }
+  - { category: person,  key: yann-lecun,          display_name: "Yann LeCun",          seed_notes: "Meta Chief AI Scientist, JEPA/world-model proponent" }
+  - { category: person,  key: arthur-mensch,       display_name: "Arthur Mensch",       seed_notes: "Mistral CEO, ex-DeepMind" }
+  - { category: person,  key: aravind-srinivas,    display_name: "Aravind Srinivas",    seed_notes: "Perplexity CEO" }
+  - { category: person,  key: liang-wenfeng,       display_name: "Liang Wenfeng",       seed_notes: "DeepSeek founder, quant-fund backed Chinese lab that shocked the West in 2025" }
+  - { category: person,  key: percy-liang,         display_name: "Percy Liang",         seed_notes: "Stanford CRFM, HELM benchmark, AI policy voice" }
+  - { category: person,  key: francois-chollet,    display_name: "François Chollet",    seed_notes: "Keras creator, ARC-AGI benchmark, reasoning-vs-scaling skeptic" }
+  - { category: person,  key: jensen-huang,        display_name: "Jensen Huang",        seed_notes: "Nvidia CEO — picks-and-shovels of the entire boom" }
+
+  # === Labs / companies beyond the big 3 ===
+  - { category: lab,     key: anthropic,        display_name: "Anthropic",         seed_notes: "Claude maker, constitutional-AI lineage" }
+  - { category: lab,     key: deepseek,         display_name: "DeepSeek",          seed_notes: "Chinese lab, R1 reasoning model and V3 weights were Jan-2025 inflection point" }
+  - { category: lab,     key: mistral-ai,       display_name: "Mistral AI",        seed_notes: "French frontier lab, open-weights friendly" }
+  - { category: lab,     key: xai,              display_name: "xAI",               seed_notes: "Elon Musk's lab, Grok models, Colossus supercluster" }
+  - { category: lab,     key: ssi,              display_name: "Safe Superintelligence Inc.", seed_notes: "Ilya Sutskever's lab, no-products-until-SSI thesis" }
+  - { category: lab,     key: cohere,           display_name: "Cohere",            seed_notes: "Enterprise-focused LLM provider, Canadian" }
+  - { category: lab,     key: ai21,             display_name: "AI21 Labs",         seed_notes: "Israeli lab, Jamba (SSM/Transformer hybrid)" }
+  - { category: lab,     key: qwen-alibaba,     display_name: "Qwen (Alibaba)",    seed_notes: "Strongest open-weights Chinese family, MoE specialists" }
+  - { category: lab,     key: moonshot-kimi,    display_name: "Moonshot AI / Kimi", seed_notes: "Chinese lab, long-context (1M+) consumer chatbot" }
+  - { category: lab,     key: zhipu-glm,        display_name: "Zhipu AI / GLM",    seed_notes: "Tsinghua-spinout Chinese lab" }
+  - { category: company, key: nvidia,           display_name: "Nvidia",            seed_notes: "GPU monopoly enabling the boom; Blackwell/B200" }
+  - { category: company, key: groq,             display_name: "Groq",              seed_notes: "LPU inference chips, extreme low-latency serving" }
+  - { category: company, key: cerebras,         display_name: "Cerebras",          seed_notes: "Wafer-scale-engine inference competitor" }
+  - { category: company, key: hugging-face,     display_name: "Hugging Face",      seed_notes: "Open-source model hub, de-facto AI GitHub" }
+  - { category: company, key: cognition,        display_name: "Cognition (Devin)", seed_notes: "Autonomous SWE agent, sold $9B valuation by late 2025" }
+  - { category: company, key: perplexity,       display_name: "Perplexity",        seed_notes: "AI-native search, Comet browser" }
+
+  # === Tools / products ===
+  - { category: tool,    key: cursor,           display_name: "Cursor",            seed_notes: "AI-native IDE, dominant among indie devs" }
+  - { category: tool,    key: claude-code,      display_name: "Claude Code",       seed_notes: "Anthropic's terminal coding agent (this CLI!)" }
+  - { category: tool,    key: windsurf,         display_name: "Windsurf",          seed_notes: "AI IDE, acquired by OpenAI mid-2025" }
+  - { category: tool,    key: ollama,           display_name: "Ollama",            seed_notes: "Local model runner, dominant open-source path" }
+  - { category: tool,    key: vllm,             display_name: "vLLM",              seed_notes: "High-throughput inference engine, PagedAttention" }
+  - { category: tool,    key: langchain,        display_name: "LangChain",         seed_notes: "Agent framework, controversial but ubiquitous" }
+  - { category: tool,    key: replicate,        display_name: "Replicate",         seed_notes: "Model-hosting marketplace" }
+
+  # === Concepts ===
+  - { category: concept, key: rag,                       display_name: "RAG",                       seed_notes: "Retrieval-augmented generation" }
+  - { category: concept, key: rlhf,                      display_name: "RLHF",                      seed_notes: "Reinforcement learning from human feedback" }
+  - { category: concept, key: dpo,                       display_name: "DPO",                       seed_notes: "Direct preference optimization — RLHF alternative" }
+  - { category: concept, key: moe,                       display_name: "Mixture of Experts",        seed_notes: "Sparse activation; how DeepSeek and Mixtral scale cheaply" }
+  - { category: concept, key: constitutional-ai,         display_name: "Constitutional AI",         seed_notes: "Anthropic's RLAIF approach" }
+  - { category: concept, key: mechanistic-interp,        display_name: "Mechanistic Interpretability", seed_notes: "Reverse-engineering model internals; SAEs" }
+  - { category: concept, key: scaling-laws,              display_name: "Scaling Laws",              seed_notes: "Kaplan/Chinchilla; compute-optimal training" }
+  - { category: concept, key: chain-of-thought,          display_name: "Chain of Thought",          seed_notes: "Reasoning-step prompting; core to o-series/R1" }
+  - { category: concept, key: mcp,                       display_name: "Model Context Protocol",    seed_notes: "Anthropic open protocol for tool/data integrations" }
+  - { category: concept, key: arc-agi,                   display_name: "ARC-AGI",                   seed_notes: "Chollet's benchmark; o3 cracked v1 late 2024" }
+  - { category: concept, key: gpqa,                      display_name: "GPQA",                      seed_notes: "Graduate-level science Q&A benchmark" }
+  - { category: concept, key: speculative-decoding,      display_name: "Speculative Decoding",      seed_notes: "Inference speedup via draft+verify" }
+  - { category: concept, key: kv-cache,                  display_name: "KV Cache",                  seed_notes: "Why long context is expensive; quantization tricks" }
+  - { category: concept, key: lora-qlora,                display_name: "LoRA / QLoRA",              seed_notes: "Parameter-efficient fine-tuning" }
+  - { category: concept, key: flash-attention,           display_name: "FlashAttention",            seed_notes: "Tri Dao; the standard fast attention kernel" }
+  - { category: concept, key: agentic-loops,             display_name: "Agentic Loops",             seed_notes: "Plan/act/observe; tool use; multi-step autonomy" }
