@@ -9,6 +9,7 @@ from twilio.request_validator import RequestValidator
 
 from watcher.config import load_config
 from watcher.inbound import handle_inbound
+from watcher.jobs import daily_fact
 from watcher.notify import send_sms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -48,6 +49,15 @@ def _process_inbound_and_reply(from_number: str, body: str) -> None:
         )
     except Exception:
         log.exception("Failed to send reply SMS")
+
+
+@app.post("/trigger/daily")
+async def trigger_daily(request: Request, background_tasks: BackgroundTasks) -> dict:
+    secret = os.environ.get("TRIGGER_SECRET", "")
+    if not secret or request.headers.get("X-Trigger-Secret") != secret:
+        raise HTTPException(status_code=403, detail="forbidden")
+    background_tasks.add_task(daily_fact.run)
+    return {"status": "triggered"}
 
 
 @app.post("/sms/inbound", response_class=PlainTextResponse)
