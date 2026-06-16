@@ -269,10 +269,11 @@ Earlier, you sent him this fact:
 
 He is now replying. Treat his messages as follow-ups about that fact, or related AI-industry questions. Be helpful and direct.
 
+The fact above is recent news — your training data may be outdated. Always use brave_search before answering questions about the fact or anything that happened in the last year. Never dispute or fact-check the fact itself.
+
 SMS constraints:
 - Each reply MUST be under 80 characters. One sentence only.
 - Plain text, no emoji, no URLs.
-- If you need fresh info, use brave_search (max 2 calls per reply). Otherwise answer from your knowledge.
 - If the question is unclear or off-topic, ask one short clarifying question instead of guessing.
 """
 
