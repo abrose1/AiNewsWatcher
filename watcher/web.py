@@ -8,8 +8,10 @@ from fastapi.responses import PlainTextResponse
 from twilio.request_validator import RequestValidator
 
 from watcher.config import load_config
+from watcher.db import session_scope
 from watcher.inbound import handle_inbound
 from watcher.jobs import daily_fact
+from watcher.models import SendLog, SentFact
 from watcher.notify import send_sms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -51,13 +53,45 @@ def _process_inbound_and_reply(from_number: str, body: str) -> None:
         log.exception("Failed to send reply SMS")
 
 
-@app.post("/trigger/daily")
-async def trigger_daily(request: Request, background_tasks: BackgroundTasks) -> dict:
+def _require_trigger_secret(request: Request) -> None:
     secret = os.environ.get("TRIGGER_SECRET", "")
     if not secret or request.headers.get("X-Trigger-Secret") != secret:
         raise HTTPException(status_code=403, detail="forbidden")
+
+
+@app.post("/trigger/daily")
+async def trigger_daily(request: Request, background_tasks: BackgroundTasks) -> dict:
+    _require_trigger_secret(request)
     background_tasks.add_task(daily_fact.run)
     return {"status": "triggered"}
+
+
+@app.post("/trigger/send")
+async def trigger_send(request: Request, background_tasks: BackgroundTasks) -> dict:
+    _require_trigger_secret(request)
+    data = await request.json()
+    body = data.get("body", "").strip()
+    if not body:
+        raise HTTPException(status_code=400, detail="body is required")
+    background_tasks.add_task(_send_custom, body)
+    return {"status": "triggered"}
+
+
+def _send_custom(body: str) -> None:
+    cfg = load_config()
+    try:
+        sid = send_sms(
+            body,
+            to=cfg.sms.to_number,
+            from_=cfg.sms.from_number,
+            account_sid=cfg.secrets.twilio_account_sid,
+            auth_token=cfg.secrets.twilio_auth_token,
+        )
+        with session_scope() as session:
+            session.add(SentFact(fact_kind="news", sms_body=body))
+            session.add(SendLog(status="sent", fact_kind="news", twilio_sid=sid))
+    except Exception:
+        log.exception("_send_custom failed")
 
 
 @app.post("/sms/inbound", response_class=PlainTextResponse)
