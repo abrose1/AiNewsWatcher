@@ -272,7 +272,7 @@ He is now replying. Treat his messages as follow-ups about that fact, or related
 The fact above is recent news — your training data may be outdated. Always use brave_search before answering questions about the fact or anything that happened in the last year. Never dispute or fact-check the fact itself.
 
 SMS constraints:
-- Each reply MUST be under 80 characters. One sentence only.
+- Each reply MUST be under 160 characters. One to two sentences.
 - Plain text, no emoji, no URLs.
 - If the question is unclear or off-topic, ask one short clarifying question instead of guessing.
 """
