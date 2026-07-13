@@ -111,7 +111,7 @@ def load_config(yaml_path: Path | None = None) -> Config:
 
     llm_raw = raw.get("llm", {})
     llm = LlmConfig(
-        model=llm_raw.get("model", "claude-sonnet-4-6"),
+        model=llm_raw.get("model", "claude-sonnet-5"),
         takeover_threshold_notes=llm_raw.get("takeover_threshold_notes", ""),
     )
 
